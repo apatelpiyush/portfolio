@@ -226,6 +226,67 @@ new SweetScroll({
 })();
 
 // ==================
+// Handle Age & DOB display
+// ==================
+(function updateAgeFromDOB(){
+  const aboutItems = Array.from(document.querySelectorAll('.about__item'));
+  if(aboutItems.length === 0){ return; }
+
+  const getItemByLabel = (labelText) => aboutItems.find(item => {
+    const label = item.querySelector('.about__label');
+    return label && label.textContent.trim().toLowerCase() === labelText.toLowerCase();
+  });
+
+  const ageItem = getItemByLabel('Age');
+  const dobItem = getItemByLabel('DOB');
+  if(!ageItem || !dobItem){ return; }
+
+  const ageValueEl = ageItem.querySelector('.about__value');
+  const dobValueEl = dobItem.querySelector('.about__value');
+  if(!ageValueEl || !dobValueEl){ return; }
+
+  const dobText = dobValueEl.textContent.trim();
+  if(!dobText){ dobItem.remove(); return; }
+
+  const parseDOB = (text) => {
+    const parts = text.split(/[-/]/).map(part => parseInt(part, 10));
+    if(parts.length !== 3 || parts.some(isNaN)){ return null; }
+    const [day, month, year] = parts;
+    const date = new Date(year, month - 1, day);
+    return isNaN(date.getTime()) ? null : date;
+  };
+
+  const getAgeDetails = (birthDate) => {
+    const today = new Date();
+    let years = today.getFullYear() - birthDate.getFullYear();
+    const hasHadBirthday =
+      today.getMonth() > birthDate.getMonth() ||
+      (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+    if(!hasHadBirthday){
+      years -= 1;
+    }
+    const isBirthday = today.getMonth() === birthDate.getMonth() && today.getDate() === birthDate.getDate();
+    return { years, isBirthday };
+  };
+
+  const birthDate = parseDOB(dobText);
+  if(!birthDate){
+    console.warn('Unable to parse DOB, removing DOB entry without updating age.');
+    dobItem.remove();
+    return;
+  }
+
+  console.info('Recorded DOB for age updates:', dobText);
+  const { years, isBirthday } = getAgeDetails(birthDate);
+  ageValueEl.textContent = years.toString();
+  if(isBirthday){
+    ageValueEl.setAttribute('data-celebrate-birthday', 'true');
+  }
+
+  dobItem.remove();
+})();
+
+// ==================
 // Anti-download deterrents for About photo
 // ==================
 (function protectPhoto(){
